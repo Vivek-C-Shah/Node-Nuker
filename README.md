@@ -4,27 +4,31 @@
 
 #### Introduction
 
-Welcome to **NodeNuker**! The ultimate solution for developers tired of the gigantic black holes of memory (a.k.a. `node_modules` and `venv` folders) that clutter up their projects. If you've ever felt like these folders are larger than actual black holes, this script is your new best friend.
+Welcome to **NodeNuker**! The ultimate solution for developers tired of the gigantic black holes of memory (a.k.a. `node_modules`, `venv`, and build/cache folders) that clutter up their projects.
 
 ---
 
 #### Why NodeNuker?
 
-As a developer, managing disk space is a perpetual struggle. With every project, those `node_modules` and `venv` folders grow and grow, consuming precious space. Here's why **NodeNuker** is a must-have:
+- **Saves Space**: Reclaim gigabytes of disk space by clearing out cruft from projects you haven't touched in a while.
+- **Cross-platform**: Works the same on macOS and Windows.
+- **Idle-aware**: Only targets projects that have actually gone stale, based on when their source files were last modified (build/cache folders themselves don't count).
+- **Reviewable**: Shows you the full deletion plan, with size and idle time per folder, before anything happens. You can strike entries out before confirming.
+- **Recoverable**: Deletes go to the OS Trash/Recycle Bin (via `send2trash`) instead of being wiped permanently, if the package is installed.
 
-- **Saves Space**: Instantly reclaim gigabytes of disk space by removing unnecessary folders.
-- **Cleans Up Projects**: Keep your project directories clean and organized.
-- **Effortless**: Automate the tedious task of manually deleting these folders.
+---
+
+#### Setup
+
+```bash
+pip install -r requirements.txt
+```
+
+(`send2trash` is optional but strongly recommended — without it, deletions are permanent.)
 
 ---
 
 #### How to Use
-
-Using **NodeNuker** is as easy as 1-2-3!
-
-1. **Download the Script**: Save the script to a file named `NodeNuker.py`.
-2. **Navigate to the Root Folder**: Open your terminal and navigate to the root directory where all your projects are stored.
-3. **Run the Script**: Execute the script by running `python NodeNuker.py`.
 
 ```bash
 # Navigate to the root folder containing all your projects
@@ -34,36 +38,40 @@ cd /path/to/your/root/folder
 python NodeNuker.py
 ```
 
-**NodeNuker** will then go through each subdirectory and nuke those pesky `node_modules` and `venv` folders into oblivion!
+Each run walks you through a short configuration step:
+
+```
+=== NodeNuker configuration (press Enter to keep the default) ===
+Root folder to scan [.]:
+Only nuke folders whose project hasn't been touched in this many days [30]:
+Target folder names (comma-separated) [node_modules, venv, .venv, __pycache__, dist, build, .next, .turbo, target, .pytest_cache, .mypy_cache, .ruff_cache]:
+```
+
+Your answers are saved to `nuker_config.json` next to the script, and reused as the defaults next time (edit that file by hand any time too).
+
+NodeNuker then scans, and shows you the full plan before touching anything:
+
+```
+=== Candidates for deletion ===
+[  1] ./old-project/node_modules  (412.3MB, idle 96d)
+[  2] ./archived-api/venv         (88.1MB, idle 210d)
+[  3] ./archived-api/__pycache__  (1.2MB, idle 210d)
+
+Total: 3 folders, 501.6MB
+
+Enter numbers to EXCLUDE from deletion (comma-separated), Enter to delete all listed, or 'q' to abort.
+>
+```
+
+Type numbers to exclude specific folders, press Enter to proceed with everything listed, or `q` to abort without deleting anything.
 
 ---
 
-#### The Code
+#### Notes
 
-Here's a sneak peek at the magic behind **NodeNuker**:
-
-```python
-import os
-import shutil
-
-def delete_folder(folder_path):
-    try:
-        shutil.rmtree(folder_path)
-        print(f"Deleted: {folder_path}")
-    except Exception as e:
-        print(f"Failed to delete {folder_path}. Reason: {e}")
-
-def find_and_delete(target_folders):
-    for root, dirs, files in os.walk('.'):
-        for dir_name in dirs:
-            if dir_name in target_folders:
-                folder_path = os.path.join(root, dir_name)
-                delete_folder(folder_path)
-
-if __name__ == "__main__":
-    target_folders = ['node_modules', 'venv']
-    find_and_delete(target_folders)
-```
+- "Idle" is measured by the newest file modification time anywhere in the project, ignoring the target folders themselves — so reinstalling `node_modules` doesn't reset the clock.
+- Nested target folders (e.g. `node_modules` inside `node_modules`) aren't scanned separately; deleting the outer one removes them anyway.
+- Config file (`nuker_config.json`) is gitignored since it's a personal, per-machine setting.
 
 ---
 
